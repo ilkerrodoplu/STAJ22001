@@ -1,0 +1,22 @@
+.star-rating {
+    display: flex;
+    justify-content: center; /* Yatay eksende ortalar */
+    margin: 0 auto; /* Alternatif olarak yatay ortalama için */
+    width: 100%; /* Ebeveyn genişliğini doldurur */
+}
+
+.star {
+    font-size: 28px;
+    color: #ddd;
+    cursor: pointer;
+    margin-right: 5px;
+    transition: all 0.2s ease;
+}
+
+.star:hover {
+    transform: scale(1.1);
+}
+
+.star.filled {
+    color: #ffc107;
+}

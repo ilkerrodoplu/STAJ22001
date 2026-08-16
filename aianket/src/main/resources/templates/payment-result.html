@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ödeme Sonucu - AI Anket Analiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+<div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+    <!-- Success Case -->
+    <div th:if="${success}" class="mb-6">
+        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100">
+            <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 mt-4 mb-4">Ödeme Başarılı! 🎉</h1>
+        <p class="text-gray-600 mb-6">Aboneliğiniz başarıyla aktifleştirildi.</p>
+    </div>
+
+    <!-- Failed Case -->
+    <div th:unless="${success}" class="mb-6">
+        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100">
+            <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 mt-4 mb-4">Ödeme Başarısız ❌</h1>
+        <p class="text-gray-600 mb-6">Ödeme işlemi tamamlanamadı.</p>
+    </div>
+
+    <!-- Transaction Info -->
+    <div th:if="${merchantOid}" class="bg-gray-50 rounded p-3 mb-6">
+        <p class="text-sm text-gray-600">
+            İşlem No: <span class="font-mono" th:text="${merchantOid}"></span>
+        </p>
+        <p th:if="${amount}" class="text-sm text-gray-600 mt-1">
+            Tutar: <span th:text="${amount}"></span> TL
+        </p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="space-y-3">
+        <a th:href="${frontendUrl} + '/dashboard'" href="/dashboard"
+           class="block w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors text-decoration-none">
+            Dashboard'a Git
+        </a>
+
+        <a th:unless="${success}" th:href="${frontendUrl} + '/pricing'" href="/pricing"
+           class="block w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-md hover:bg-gray-50 transition-colors text-decoration-none">
+            Tekrar Dene
+        </a>
+    </div>
+
+    <!-- Auto redirect after 10 seconds -->
+    <p class="text-sm text-gray-500 mt-6">
+        10 saniye sonra otomatik olarak yönlendirileceksiniz...
+    </p>
+</div>
+
+<script th:inline="javascript">
+    // 10 saniye sonra otomatik redirect. Adres tek kaynaktan (app.frontend.url) gelir.
+    setTimeout(function () {
+        window.location.href = /*[[${frontendUrl}]]*/ '' + '/dashboard';
+    }, 10000);
+</script>
+</body>
+</html>

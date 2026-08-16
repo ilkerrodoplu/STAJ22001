@@ -1,0 +1,18 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Paketleri yükle
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Modeli indirmek için klasör oluştur
+RUN mkdir -p /app/model
+
+# Modeli build sırasında indir ve kaydet
+RUN python -c "from transformers import pipeline; pipeline('sentiment-analysis', model='savasy/bert-base-turkish-sentiment-cased').save_pretrained('/app/model/sentiment_model')"
+
+# Uygulama kodunu kopyala
+COPY . .
+
+CMD ["python", "analyze_workers.py"]

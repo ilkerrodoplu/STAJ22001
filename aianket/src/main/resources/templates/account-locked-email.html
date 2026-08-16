@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hesabınız Kilitlendi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            color: #333333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #e74c3c;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 12px;
+            color: #666666;
+        }
+        .button {
+            display: inline-block;
+            background-color: #e74c3c;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .warning {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Hesabınız Kilitlendi</h1>
+    </div>
+    <div class="content">
+        <h2>Merhaba <span th:text="${name}">İsim</span>,</h2>
+
+        <p>Hesabınıza çok sayıda hatalı şifre denemesi yapıldı. Güvenliğiniz için
+            hesabınız giriş yapmaya kapatıldı.</p>
+
+        <p>Hesabınızı yeniden kullanabilmek için şifrenizi sıfırlamanız gerekiyor:</p>
+
+        <div style="text-align: center;">
+            <a th:href="${resetUrl}" class="button">Şifremi Sıfırla ve Kilidi Aç</a>
+        </div>
+
+        <p class="warning">Bu bağlantı <span th:text="${expiresIn}">15 dakika</span> içinde sona erecektir.</p>
+
+        <p><strong>Bu denemeleri siz yapmadıysanız</strong>, birisi hesabınıza girmeye
+            çalışıyor olabilir. Şifrenizi sıfırlarken daha önce hiç kullanmadığınız,
+            güçlü bir şifre seçin.</p>
+
+        <p>Bağlantının süresi dolarsa giriş ekranındaki "Şifremi Unuttum" bağlantısından
+            yeni bir tane isteyebilirsiniz.</p>
+
+        <p>Teşekkürler,<br>AI Destekli Anket Platformu Ekibi</p>
+    </div>
+    <div class="footer">
+        <p>Bu e-posta, hesabınızda çok sayıda hatalı giriş denemesi tespit edildiği için gönderilmiştir.</p>
+        <p>&copy; 2025 AI Destekli Anket Platformu. Tüm hakları saklıdır.</p>
+    </div>
+</div>
+</body>
+</html>

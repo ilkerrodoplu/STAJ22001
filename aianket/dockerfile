@@ -1,0 +1,43 @@
+# Konum: ~/projects/aianket/dockerfile
+
+# -----------------
+# 1. AŞAMA: BUILD (Uygulamayı Derleme)
+# -----------------
+# Projeyi derlemek için JDK (Java Development Kit) içeren bir Maven imajı kullan.
+# Kullandığınız Java versiyonuna göre bunu güncelleyin (örn: eclipse-temurin:17-jdk-jammy).
+FROM maven:3.8.5-openjdk-17 AS build
+
+# Container içinde çalışacağımız dizini belirle.
+WORKDIR /app
+
+# Maven'in bağımlılıkları indirmesi için pom.xml dosyasını kopyala.
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# Geri kalan tüm kaynak kodunu kopyala.
+COPY src ./src
+
+# Maven kullanarak projeyi derle ve paketle (executable .jar oluştur).
+RUN mvn package -DskipTests
+
+# -----------------
+# 2. AŞAMA: RUN (Uygulamayı Çalıştırma)
+# -----------------
+# Sonuç imajımız, sadece Java'yı çalıştırmak için gerekli olan JRE'yi (Java Runtime Environment)
+# içeren çok daha küçük bir imaj olacak.
+FROM eclipse-temurin:17-jre-jammy
+
+# Container içinde çalışacağımız dizini belirle.
+WORKDIR /app
+
+# Bir önceki "build" aşamasında oluşturulan .jar dosyasını
+# /app/target/ dizininden bu imajın içine kopyala ve adını app.jar yap.
+# NOT: pom.xml'deki <build><finalName>...</finalName> etiketine göre dosya adını kontrol edin.
+COPY --from=build /app/target/*.jar app.jar
+
+# Container'ın dış dünyaya 8081 portundan hizmet vereceğini belirt.
+EXPOSE 8081
+
+# Container çalıştığında Java uygulamasını (app.jar) başlat.
+# docker-compose.yml'deki environment değişkenleri buraya otomatik olarak geçer.
+ENTRYPOINT ["java", "-jar", "app.jar"]

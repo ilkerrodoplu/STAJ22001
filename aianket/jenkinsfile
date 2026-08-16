@@ -1,0 +1,45 @@
+pipeline {
+  agent any
+  triggers { githubPush() }
+  environment {
+    RUNTIME_DIR = '/opt/projects/aianket'
+    COMPOSE_CMD = 'docker compose'
+  }
+  options {
+    skipStagesAfterUnstable()
+    timeout(time: 20, unit: 'MINUTES')
+  }
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
+    }
+    stage('Unit Tests') {
+      steps {
+        sh 'mvn -B -DskipTests=false test'
+      }
+    }
+    stage('Sync to runtime dir') {
+      steps {
+        sh '''
+          set -e
+          mkdir -p ${RUNTIME_DIR}
+          rsync -a --delete \
+            --exclude ".git" \
+            --exclude ".env" \
+            ./ ${RUNTIME_DIR}/
+        '''
+      }
+    }
+    stage('Build & Deploy') {
+      steps {
+        sh '''
+          set -e
+          cd ${RUNTIME_DIR}
+          ${COMPOSE_CMD} build
+          ${COMPOSE_CMD} up -d
+          docker image prune -f
+        '''
+      }
+    }
+  }
+}

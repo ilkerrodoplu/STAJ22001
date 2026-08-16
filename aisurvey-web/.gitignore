@@ -1,0 +1,22 @@
+# Bağımlılıklar
+node_modules/
+
+# Derleme çıktısı
+build/
+dist/
+
+# Ortam ayarları (sırlar)
+.env
+.env.local
+.env.*.local
+
+# Kayıtlar
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editör / IDE
+.idea/
+.vscode/
+.claude/
+.DS_Store

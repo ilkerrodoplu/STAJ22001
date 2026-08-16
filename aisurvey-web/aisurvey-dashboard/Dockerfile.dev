@@ -1,0 +1,21 @@
+# Geliştirme ortamı için: canlı yenileme (hot reload) yapan CRA dev server.
+# Prod build'in aksine kaynak kod host'tan volume olarak mount edilir,
+# bu yüzden image'ı yeniden build etmeden kod değişiklikleri anında yansır.
+FROM node:18-alpine@sha256:8d6421d663b4c28fd3ebc498332f249011d118945588d0a35cb9bc4b8ca09d9e
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+# Docker Desktop üzerinde bind mount'lardaki dosya değişiklik olayları
+# çoğu zaman native olarak iletilmez; polling'e zorluyoruz ki hot reload çalışsın.
+ENV CHOKIDAR_USEPOLLING=true
+ENV WATCHPACK_POLLING=true
+ENV HOST=0.0.0.0
+
+EXPOSE 3000
+
+CMD ["npm", "start"]

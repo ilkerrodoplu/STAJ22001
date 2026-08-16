@@ -1,0 +1,167 @@
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "127.0.0.1:2181:2181"
+    networks:
+      - kafka_network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "127.0.0.1:9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 999
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_METADATA_MAX_AGE_MS: 30000
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      - kafka_network
+
+  # 🔥 MongoDB - Önce başlatılacak
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    # --auth açık: kimlik doğrulaması olmadan tek bir sorgu bile çalışmaz.
+    # Önceden kapalıydı; ağa erişen herkes tüm veritabanını okuyabiliyordu.
+    command: ["mongod", "--auth", "--bind_ip_all"]
+    ports:
+      - "127.0.0.1:27017:27017"
+    # Sırlar .env'den gelir; compose dosyasında düz metin şifre durmaz.
+    # env_file KULLANILMIYOR: mail/PayTR sırlarının mongo konteynerine
+    # girmesinin anlamı yok, yalnızca gereken dört değişken veriliyor.
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      # mongo-init.js bunları okur.
+      MONGO_APP_DB: ${MONGO_APP_DB}
+      MONGO_APP_USERNAME: ${MONGO_APP_USERNAME}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD}
+    volumes:
+      - aianket_mongo_data:/data/db
+      # Uygulama kullanıcısını açar; yalnızca veri dizini boşken çalışır.
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - kafka_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "-u", "${MONGO_ROOT_USERNAME}",
+             "-p", "${MONGO_ROOT_PASSWORD}", "--authenticationDatabase", "admin",
+             "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+  # Veritabanı yönetim arayüzü. VARSAYILAN OLARAK BAŞLAMAZ: root yetkisiyle tüm
+  # veriye tam erişim veren bir arayüzün sürekli ayakta durmasının sebebi yok.
+  # Gerektiğinde: docker compose --profile debug up -d mongo-express
+  mongo-express:
+    image: mongo-express:1.0.0
+    container_name: mongo-express
+    profiles: ["debug"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8082:8081"
+    environment:
+      # MongoDB bağlantısı - root kullanıcısıyla, sırlar .env'den
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_PORT: "27017"
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD}
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+
+      # 🔒 Basic Authentication - AÇIK
+      ME_CONFIG_BASICAUTH: "true"
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USERNAME}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD}
+
+      # Web arayüzü ayarları
+      ME_CONFIG_SITE_BASEURL: "/"
+      ME_CONFIG_SITE_COOKIESECRET: ${MONGO_EXPRESS_COOKIE_SECRET}
+      ME_CONFIG_SITE_SESSIONSECRET: ${MONGO_EXPRESS_SESSION_SECRET}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - kafka_network
+
+  # 🔥 Backend - Servis adını tutarlı yap
+  xsurvey-backend:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: xsurvey-backend
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    # Sırlar (JWT_SECRET, MONGO_URI, PAYTR_*, MAIL_*) ve adresler
+    # (APP_FRONTEND_URL, APP_PUBLIC_URL) .env dosyasından gelir.
+    env_file:
+      - .env
+    environment:
+      # Saat dilimi SABİTLENİR. Belirtilmezse konteyner UTC'de çalışır ve
+      # LocalDateTime.now() üç saat geride üretilir: kilit bitiş saatleri,
+      # hesap silinme tarihleri ve loglar Türkiye saatinden kayar. Host'un
+      # saat dilimine güvenilmez, sunucular genelde UTC'dir.
+      - TZ=Europe/Istanbul
+
+      # 🔥 Kafka ayarları
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_KAFKA_CONSUMER_GROUP_ID=survey-response-group
+
+      # 🔥 Profile ve Port
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8081
+
+      # 🔥 Metrics kapalı
+      - MANAGEMENT_METRICS_ENABLE_SYSTEM=false
+      - MANAGEMENT_METRICS_ENABLE_PROCESS=false
+      - MANAGEMENT_METRICS_ENABLE_JVM=false
+      - SPRING_JMX_ENABLED=false
+
+      # 🔥 JVM ayarları
+      - JAVA_OPTS=-Xmx512m -Xms256m -Djava.security.egd=file:/dev/./urandom
+    networks:
+      - kafka_network
+    restart: unless-stopped
+
+  analyze_workers:
+    build: ./analyze
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    networks:
+      - kafka_network
+    restart: unless-stopped
+
+networks:
+  kafka_network:
+    driver: bridge
+
+volumes:
+  aianket_mongo_data:

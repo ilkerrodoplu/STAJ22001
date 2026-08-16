@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anketiniz Silindi</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; color: #333333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #c0392b; color: white; padding: 20px; text-align: center; }
+    .content { padding: 20px; background-color: #f9f9f9; }
+    .footer { text-align: center; padding: 10px; font-size: 12px; color: #666666; }
+    .button { display: inline-block; background-color: #c0392b; color: white; text-decoration: none;
+      padding: 10px 20px; margin: 20px 0; border-radius: 5px; font-weight: bold; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Anketiniz Silindi</h1>
+  </div>
+  <div class="content">
+    <h2>Merhaba <span th:text="${name}">İsim</span>,</h2>
+    <p>
+      <strong th:text="${surveyName}">Anket adı</strong> adlı anketiniz, gönderilen uyarıya rağmen
+      <span th:text="${graceDays}">7</span> gün içinde düzeltilmediği için tamamen silindi.
+      Toplanan yanıtlarınız ve raporlarınız duruyor.
+    </p>
+    <p>
+      Anketi yeniden oluşturabilirsiniz. Uyarıyla ilgili sorunuz varsa site yönetimine mesaj gönderin.
+    </p>
+    <div style="text-align: center;">
+      <a th:href="${messagesUrl}" class="button">Site Yönetimine Mesaj Gönder</a>
+    </div>
+  </div>
+  <div class="footer">
+    <p>&copy; 2025 AI Anket Analiz. Tüm hakları saklıdır.</p>
+  </div>
+</div>
+</body>
+</html>
